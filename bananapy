@@ -7,16 +7,18 @@ import os
 ############################## Configuration ##############################
 
 # Rules that you don't want to check by default
-default_ignored_rules = []
+# default_ignored_rules = []
+default_ignored_rules = ["O1"]
 
 # Folders that you don't want to check by default
-default_ignored_folders = ["./lib"]
+# default_ignored_folders = ["./lib"]
+default_ignored_folders = []
 
 # Whether or not you want to display the errors with colors individually
 individual_colored_errors = True
 
 # Version of the program
-version = "1.0.0"
+version = "1.0.1"
 
 ################################ Help Page ################################
 
@@ -188,37 +190,40 @@ def filter_error_files(errors_list, options):
 
 ################################# Displaying #################################
 
-def errors_type_count(error_type):
+def errors_type_count(errors_type, ignored_rules_raw):
     count = 0
-    for error_count in list(error_type.values()):
-        count += int(error_count)
+    ignored_rules = [rule[1:-1] for rule in ignored_rules_raw.keys()]
+    for error_type in errors_type:
+        if error_type in ignored_rules:
+            continue
+        count += int(errors_type[error_type])
     return count
 
-def errors_count(errors):
+def errors_count(errors, ignored_rules):
     count = 0
-    for error_type in errors:
-        count += errors_type_count(errors[error_type])
+    for errors_type in errors:
+        count += errors_type_count(errors[errors_type], ignored_rules)
     return count
 
 def display_result(errors_summary, errors_list, ignored_rules, update):
     print(f"{BWhite}################### Summary ###################{NC}")
-    print(f"{UWhite}{errors_count(errors_summary)} Error(s):{NC}")
+    print(f"{UWhite}{errors_count(errors_summary, ignored_rules)} Error(s):{NC}")
     if "FATAL" in errors_summary.keys():
-        print(f"{BRed}- {errors_type_count(errors_summary['FATAL'])} Fatal(s){NC}")
+        print(f"{BRed}- {errors_type_count(errors_summary['FATAL'], ignored_rules)} Fatal(s){NC}")
     if "MAJOR" in errors_summary.keys():
-        print(f"{Red}- {errors_type_count(errors_summary['MAJOR'])} Major(s){NC}")
+        print(f"{Red}- {errors_type_count(errors_summary['MAJOR'], ignored_rules)} Major(s){NC}")
     if "MINOR" in errors_summary.keys():
-        print(f"{Yellow}- {errors_type_count(errors_summary['MINOR'])} Minor(s){NC}")
+        print(f"{Yellow}- {errors_type_count(errors_summary['MINOR'], ignored_rules)} Minor(s){NC}")
     if "INFO" in errors_summary.keys():
-        print(f"{Blue}- {errors_type_count(errors_summary['INFO'])} Info(s){NC}")
-    if errors_count(errors_summary) == 0:
+        print(f"{Blue}- {errors_type_count(errors_summary['INFO'], ignored_rules)} Info(s){NC}")
+    if errors_count(errors_summary, ignored_rules) == 0:
         print(f"{Green}- Everything is fine, good job. Hugo will kiss you{NC}")
     if len(ignored_rules) > 0:
         # for rule in ignored_rules:
         #     ignored.append(f"{} '{rule}'")
         # print(f"Ignored {', '.join(ignored)}")
         print(f"Ignored {', '.join([f'{ignored_rules[rule]} {rule}' for rule in ignored_rules])}")
-    if errors_count(errors_summary) != 0:
+    if errors_count(errors_summary, ignored_rules) != 0:
         print(f"{BWhite}################### Errors ####################{NC}")
     for error in errors_list:
         if individual_colored_errors:
